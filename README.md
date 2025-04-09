@@ -72,4 +72,4 @@ or
 py app.py
 ```
 
-<img src="./screenshot_yipitdata_dashboard.jpg" alt="screenshot_dash_application" width="170"/>
+<img src="./screenshot_yipitdata_dashboard.jpg" alt="screenshot_dash_application" width="1000"/>
