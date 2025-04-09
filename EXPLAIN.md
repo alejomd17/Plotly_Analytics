@@ -1,45 +1,84 @@
-# Explicación del Enfoque
+# Explain - Plotly Dashboard for sales analysis
 
-## Diseño de la Aplicación
+## Architecture
+   - The project follows a modular architecure organized in layers:
+      sales-analysis-dash/
+      ├── app.py
+      ├── src/
+      │   ├── __init__.py
+      │   ├── app_instance.py
+      │   ├── callbacks.py
+      │   ├── get_data.py
+      │   └── layouts.py
+      ├── assets/
+      │   ├── styles.css
+      │   └── fonts/
+      ├── data/
+      │   ├── dataset.csv
+      ├── EXPLAIN.md
+      ├── README.md
+      └── requirements
 
-1. **Procesamiento de Datos**:
-   - Convertí las columnas de fecha a objetos datetime para facilitar el análisis temporal
-   - Extraje año, mes y trimestre como columnas separadas
-   - Creé identificadores combinados como "2021 Q3" para mejor visualización
+## App Design
 
-2. **Cálculo de Métricas**:
-   - Ventas totales: Agregación simple por período
-   - Crecimiento interanual: Función que calcula la diferencia porcentual con el mismo período del año anterior
+1. **Data preprocessing**:
+   - All the preprocessing was developed in the module src/get_data.py,
+   - First at all, I create the function load_and_preprocess_data() where I convert the object columns that could be converted in datetime. I extracted the year, month and quearter as separated columns, and I created the combine columns year_quarter and year_month, in order to facilitate the temporal analysis.
+   For this exercise is important to comment that I eliminated all the 2022 information because it hadn't enough information (Actually I created a loop which is looking for the quantity of registers in a year, and if that amount is less than 1000 then I won't work with this year).
 
-3. **Interactividad**:
-   - Implementé filtros para segmentos y categorías usando dropdowns multi-selección
-   - Añadí un selector para cambiar entre vista trimestral y mensual
-   - Los gráficos se actualizan automáticamente al cambiar los filtros
+2. **Metrics calculation**:
+   - The function calculate_yoy_growth() is used to calculate the percentage difference between the month or quarter againts the same period of the last year. Also, this function create some columns that is supporting for the visualization.
+   - In the other hand, Total sales will be a simple aggregation according to the year_month and year_quarter.
 
-4. **Visualizaciones**:
-   - Gráfico de barras para ventas totales (fácil comparación entre períodos)
-   - Gráfico de líneas para crecimiento interanual (mejor para mostrar tendencias)
+3. **Interactivity**:
+   - The function get_data(segments, categories, time_resolution) is receiving the parameters segments, categories, time_resolution that are used for the interactivity of the app.
+   - The segments and categories are filtering the dataframe and the time_resolution is used to calculate the growth and sales metrics explained in the last point.
+   - Finally, I have two dataframes to plot: Sales and growth graphs, which are filtered according to the segments, categories and time_resolution
 
-## Insights Observados
+4. **App Instance**:
+   - I create a module in the module src/app_instance.py, that is supporting as a centralized configuration of the app.
+   - It is allowing a unified inicialization: it create a unique instance of the Dash app that will be consumed by the rest of the moduls.
+   - Also, it centralizes the initial configuration (asset) and ensures that the entire application uses the same Dash instance.
 
-1. **Patrones Estacionales**:
-   - Los datos de ejemplo muestran ventas más altas en el tercer trimestre (Q3)
-   - Esto podría indicar patrones estacionales en el comercio electrónico
+5. **Callbacks and plots**:
+   - The callback that update the plots was developed in the module src/callbacks.py,
+   - First, it is calling the app: @app.callback in order to update the inputs and outputs. For this exercise the inputs are segment, category and time, these are used to create the dataframes that are used to plot the graph.
+   That's why, the outputs are the graph and growth graphs.
+   - According to the above, in the function update_charts the graphs are created using plotly, both being are barplot because the quantity of data is small.
+   - Both are improved using plotly function .update_layout for the title, background and grid and .update_traces for show the numbers in numeric format
+   
+4. **Layouts**:
+   - The layouts are developed in the module src/layouts.py,
+   - Also, it is using a styles in css (Into the assets folder) to make more beautiful the app.
+   - In the same folder (assets) there is another folder with some fonts that I think are similar to the ones used in the YipitData Home Assignment file.
+   - For the layouts I create, 3 different Divisions:
+      1. A title: app-title
+      2. A filter-container: Which includes another 2 divisions:
+         2.1. In the first row dropdown-row: I create a Div dropdown-container where I implement filters for segments and categories using dropdowns multi-select
+         2.2. In the second row radio-row: I create a Div radio-container where I added a selector in order to change the view between quarter and month.
+      This will allow the charts to update automatically when changing filters.
+      3. A graphs-container: Where the Dash graphs (ddc) are located (It means, the outputs that the callbacks return us)
 
-2. **Crecimiento Interanual**:
-   - El cálculo de crecimiento muestra cómo evolucionan las ventas en los mismos períodos año tras año
-   - Permite identificar si hay crecimiento positivo o negativo
+5. **Initialization & Assembly**
+   - This file serves as the entry point and orchestration hub for the Dash application.
+   - Coordinates the union of all modules:
+      - Takes the preconfigured Dash instance (app_instance.py)
+      - Imports the visual framework (layouts.py)
+      - Registers the interactive logic (callbacks.py)
 
-## Decisiones de Diseño
+## Observed Insights
+   - There are not enough data for considering using 2022, so It was deleted of the analysis.
+   - The graph show a seasonal patterns in the Q3 and the month 09.
+   - Looks like something happened in the 202103 and forward, because it was showing a good behaviour but inmediatly it starts to decrease. This may have been Covid.
+   - The Year-on-year growth shows a reduction in the sales around 6%-10% aprox.
+   - It doesn't exist an specific period of "prime", in 2020 was Q2 and 2021 was Q1, but it is normal that in the month 11 have an amazing register.
 
-1. **Prioridad a Funcionalidad sobre Estilo**:
-   - Según las instrucciones, me enfoqué en la claridad y corrección más que en el estilo
-   - La interfaz es minimalista pero funcional
+## Decisions of the design
 
-2. **Organización del Código**:
-   - Separé el procesamiento de datos de la lógica de visualización
-   - Usé callbacks modularizados para mantener el código limpio
+1. **Prioritize Functionality over Style**:
+   - According the instructions, I focus on clarity and correctness rather than styling
+   - The interface is minimalist but functional
 
-3. **Manejo de Datos**:
-   - Todos los cálculos se hacen sobre el dataframe filtrado para garantizar consistencia
-   - Las transformaciones son documentadas y eficientes
+2. **Code organization**:
+   - I separed the steps: the preprocessing of the data, the layouts and the callbacks, in order to have clean code and OOP.
+   - Also I create an app_instance to centralized the configuration of the app.
